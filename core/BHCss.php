@@ -117,7 +117,36 @@ class BHCss{
 	}
 
 	// 컨버팅
-	public static function conv($path, $target = ''){
+	public static function conv($path, $target = '', $parentCheckDisable = false){
+		if(!$parentCheckDisable){
+			$data = file_get_contents($path);
+			preg_match_all('/\/\/\s*parent\s*\:\s*(.*?)\.bhcss\.php/', $data, $matches);
+			if($matches && $matches[1]){
+
+				$targets = array();
+				$sources = array();
+
+				foreach($matches[1] as $v){
+					$t = 0;
+					$source2 = explode('/', $path);
+					array_pop($source2);
+					$source2 = implode('/', $source2) . '/' . $v . '.bhcss.php';
+					if($target){
+						$targetPath = explode('/', $target);
+						array_pop($targetPath);
+						$targetPath .= '/' . $v . '.bhcss.php';
+					}
+					else $targetPath = '';
+					if(file_exists($source2)){
+						$sources[] = $source2;
+						$targets[] = $targetPath;
+						self::conv($source2, $targetPath);
+					}
+				}
+				return (object) array('result' => 'parent convert', 'message' => array('source' => $sources, 'target' => $targets));
+			}
+		}
+
 		$path = str_replace('\\', '/', $path);
 
 		if(!$target) $target = self::getTargetPath($path);
